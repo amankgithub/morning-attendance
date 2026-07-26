@@ -244,27 +244,8 @@
             font-weight: 700;
             padding: 6px 12px;
             border-radius: 12px;
-            white-space: nowrap;
-        }
-
-        .person-actions {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            gap: 6px;
             margin-left: 10px;
-            flex-shrink: 0;
-        }
-
-        .person-actions-top {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .person-actions-bottom {
-            display: flex;
-            gap: 6px;
+            white-space: nowrap;
         }
 
         .status-badge.present { background: var(--success-bg); color: var(--success); }
@@ -280,6 +261,7 @@
             width: 32px;
             height: 32px;
             border-radius: 10px;
+            margin-left: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -607,6 +589,7 @@
 
         .btn-dhoti {
             display: inline-block;
+            margin-top: 6px;
             padding: 3px 10px;
             border-radius: 20px;
             font-size: 10px;
@@ -627,6 +610,8 @@
 
         .btn-away {
             display: inline-block;
+            margin-top: 6px;
+            margin-left: 6px;
             padding: 3px 10px;
             border-radius: 20px;
             font-size: 10px;
@@ -1113,15 +1098,29 @@ function createPersonRow(event, person, opts){
   nameEl.textContent = person.name;
   info.appendChild(nameEl);
 
+  const dhotiBtn = document.createElement("button");
+  const isWearing = dhotiStates[entryKey(event, person.name)] !== false;
+  dhotiBtn.className = "btn-dhoti" + (isWearing ? " active" : "");
+  dhotiBtn.textContent = isWearing ? "Dhoti" : "No Dhoti";
+  dhotiBtn.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    toggleDhoti(event, person.name);
+  });
+  info.appendChild(dhotiBtn);
+
+  const awayBtn = document.createElement("button");
+  const isAway = notStayingStates[person.name] === true;
+  awayBtn.className = "btn-away" + (isAway ? " active" : "");
+  awayBtn.textContent = isAway ? "Not Staying" : "Staying";
+  awayBtn.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    toggleNotStaying(person.name);
+  });
+  info.appendChild(awayBtn);
+
   row.appendChild(info);
 
   row.addEventListener("click", () => logTap(event, person));
-
-  const actions = document.createElement("div");
-  actions.className = "person-actions";
-
-  const actionsTop = document.createElement("div");
-  actionsTop.className = "person-actions-top";
 
   const badge = document.createElement("span");
   if(e){
@@ -1142,7 +1141,7 @@ function createPersonRow(event, person, opts){
     badge.className = "status-badge pending";
     badge.textContent = "—";
   }
-  actionsTop.appendChild(badge);
+  row.appendChild(badge);
 
   if(opts.allowOverride){
     const hasOverride = !!(e1Overrides[person.name] || e1EndOverrides[person.name]);
@@ -1155,36 +1154,8 @@ function createPersonRow(event, person, opts){
       openOverrideName = openOverrideName === person.name ? null : person.name;
       renderAll();
     });
-    actionsTop.appendChild(edit);
+    row.appendChild(edit);
   }
-
-  actions.appendChild(actionsTop);
-
-  const actionsBottom = document.createElement("div");
-  actionsBottom.className = "person-actions-bottom";
-
-  const dhotiBtn = document.createElement("button");
-  const isWearing = dhotiStates[entryKey(event, person.name)] !== false;
-  dhotiBtn.className = "btn-dhoti" + (isWearing ? " active" : "");
-  dhotiBtn.textContent = isWearing ? "Dhoti" : "No Dhoti";
-  dhotiBtn.addEventListener("click", (ev) => {
-    ev.stopPropagation();
-    toggleDhoti(event, person.name);
-  });
-  actionsBottom.appendChild(dhotiBtn);
-
-  const awayBtn = document.createElement("button");
-  const isAway = notStayingStates[person.name] === true;
-  awayBtn.className = "btn-away" + (isAway ? " active" : "");
-  awayBtn.textContent = isAway ? "Not Staying" : "Staying";
-  awayBtn.addEventListener("click", (ev) => {
-    ev.stopPropagation();
-    toggleNotStaying(person.name);
-  });
-  actionsBottom.appendChild(awayBtn);
-
-  actions.appendChild(actionsBottom);
-  row.appendChild(actions);
 
   container.appendChild(row);
   return container;
