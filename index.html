@@ -239,13 +239,6 @@
             display: block;
         }
 
-        .person-sub {
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 2px;
-            display: block;
-        }
-
         .status-badge {
             font-size: 12px;
             font-weight: 700;
@@ -901,11 +894,6 @@ function to12(hhmm){
   const h12 = h % 12 || 12;
   return h12 + ":" + pad2(m) + " " + ap;
 }
-function to12FromDate(d){
-  const ap = d.getHours() >= 12 ? "PM" : "AM";
-  const h12 = d.getHours() % 12 || 12;
-  return h12 + ":" + pad2(d.getMinutes()) + " " + ap;
-}
 function todayStr(d){ return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
 function timeToDateToday(hhmm){
   const parts = hhmm.split(":");
@@ -1124,22 +1112,6 @@ function createPersonRow(event, person, opts){
   nameEl.className = "person-name";
   nameEl.textContent = person.name;
   info.appendChild(nameEl);
-
-  const sub = document.createElement("span");
-  sub.className = "person-sub";
-  if(e){
-    if(e.status === "A"){
-      sub.textContent = "Not logged · window closed at " + to12(effectiveEndTime(event, person)) + " · tap to log late";
-    } else if(e.status === "N"){
-      sub.textContent = "Marked not staying · tap to log anyway";
-    } else {
-      const t = new Date(e.actualTimestamp);
-      sub.textContent = "Logged " + to12FromDate(t) + " · deadline " + to12(e.reportingTimeUsed);
-    }
-  } else {
-    sub.textContent = "Window " + to12(effectiveTime(event, person)) + "–" + to12(effectiveEndTime(event, person)) + " · tap to log";
-  }
-  info.appendChild(sub);
 
   row.appendChild(info);
 
