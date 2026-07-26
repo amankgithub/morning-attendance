@@ -603,9 +603,9 @@
         <button class="btn-icon" id="settingsBtn">⚙</button>
     </div>
     <div class="tabs">
-        <button class="tab-btn active" data-tab="1">Event 1</button>
-        <button class="tab-btn" data-tab="2">Event 2</button>
-        <button class="tab-btn" data-tab="3">Event 3</button>
+        <button class="tab-btn active" data-tab="1">SA</button>
+        <button class="tab-btn" data-tab="2">MC</button>
+        <button class="tab-btn" data-tab="3">MA</button>
     </div>
 </header>
 
@@ -650,7 +650,7 @@
     <!-- TAB 3 -->
     <section class="panel" id="panel-3">
         <div class="card">
-            <span class="section-title">Event 3 Window</span>
+            <span class="section-title">MA Window</span>
             <div class="time-display-row">
                 <div class="time-box" id="e3GlobalTimeBtn">
                     <label>Start</label>
@@ -1243,16 +1243,16 @@ document.getElementById("tpOK").addEventListener("click", () => {
 
 /* ---------- Global time inputs ---------- */
 document.getElementById("e1GlobalTimeBtn").addEventListener("click", () => {
-  openTimePicker(e1Global, "Event 1 · start", (v) => { e1Global = v; localStorage.setItem(K.E1, v); renderAll(); });
+  openTimePicker(e1Global, "SA · start", (v) => { e1Global = v; localStorage.setItem(K.E1, v); renderAll(); });
 });
 document.getElementById("e1GlobalEndTimeBtn").addEventListener("click", () => {
-  openTimePicker(e1EndGlobal, "Event 1 · end", (v) => { e1EndGlobal = v; localStorage.setItem(K.E1_END, v); renderAll(); });
+  openTimePicker(e1EndGlobal, "SA · end", (v) => { e1EndGlobal = v; localStorage.setItem(K.E1_END, v); renderAll(); });
 });
 document.getElementById("e3GlobalTimeBtn").addEventListener("click", () => {
-  openTimePicker(e3Global, "Event 3 · start", (v) => { e3Global = v; localStorage.setItem(K.E3, v); renderAll(); });
+  openTimePicker(e3Global, "MA · start", (v) => { e3Global = v; localStorage.setItem(K.E3, v); renderAll(); });
 });
 document.getElementById("e3GlobalEndTimeBtn").addEventListener("click", () => {
-  openTimePicker(e3EndGlobal, "Event 3 · end", (v) => { e3EndGlobal = v; localStorage.setItem(K.E3_END, v); renderAll(); });
+  openTimePicker(e3EndGlobal, "MA · end", (v) => { e3EndGlobal = v; localStorage.setItem(K.E3_END, v); renderAll(); });
 });
 document.getElementById("e2GroupTimeBtn").addEventListener("click", () => {
   openTimePicker(e2Times[currentE2Group], currentE2Group + " · start", (v) => { e2Times[currentE2Group] = v; saveJSON(K.E2, e2Times); renderAll(); });
