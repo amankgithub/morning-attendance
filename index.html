@@ -829,7 +829,6 @@ let e1EndGlobal = localStorage.getItem(K.E1_END) || DEFAULTS.E1_END;
 let e3Global = localStorage.getItem(K.E3) || DEFAULTS.E3;
 let e3EndGlobal = localStorage.getItem(K.E3_END) || DEFAULTS.E3_END;
 let scriptUrl = localStorage.getItem(K.URL) || "";
-let dhotiStates = getJSON(K.DHOTI, {});
 let notStayingStates = getJSON(K.NOT_STAYING, {});
 
 let e1Overrides = getJSON(K.E1_OVR, {});
@@ -856,6 +855,21 @@ function pruneOldStaged(){
 pruneOldStaged();
 let entries = getJSON(stagedKey(), {});
 function persistEntries(){ saveJSON(stagedKey(), entries); }
+
+// Dhoti toggle: keyed by event|name and scoped to today, unlike the
+// "staying" flag it must NOT carry over between events or across days —
+// each event's toggle starts back at "wearing dhoti" every day.
+function dhotiKey(d){ return K.DHOTI + "_" + todayStr(d || new Date()); }
+function pruneOldDhoti(){
+  const keep = dhotiKey();
+  for(let i = localStorage.length - 1; i >= 0; i--){
+    const k = localStorage.key(i);
+    if(k && k.indexOf(K.DHOTI + "_") === 0 && k !== keep) localStorage.removeItem(k);
+  }
+}
+pruneOldDhoti();
+let dhotiStates = getJSON(dhotiKey(), {});
+function persistDhoti(){ saveJSON(dhotiKey(), dhotiStates); }
 
 let currentTab = 1;
 let currentE2Group = GROUPS[0];
@@ -887,9 +901,10 @@ function timeToDateToday(hhmm){
 function cssSafe(s){ return s.replace(/[^a-zA-Z0-9]/g, "_"); }
 function entryKey(event, name){ return event + "|" + name; }
 
-function toggleDhoti(name){
-  dhotiStates[name] = dhotiStates[name] === false ? true : false;
-  saveJSON(K.DHOTI, dhotiStates);
+function toggleDhoti(event, name){
+  const key = entryKey(event, name);
+  dhotiStates[key] = dhotiStates[key] === false ? true : false;
+  persistDhoti();
   renderAll();
 }
 
@@ -931,7 +946,7 @@ function logTap(event, person){
     minutesLate: minutesLate,
     status: status,
     date: todayStr(now),
-    dhoti: dhotiStates[person.name] !== false,
+    dhoti: dhotiStates[entryKey(event, person.name)] !== false,
     uploaded: false
   };
   persistEntries();
@@ -959,7 +974,7 @@ function autoMarkAbsentees(){
           minutesLate: null,
           status: "A",
           date: todayStr(now),
-          dhoti: dhotiStates[person.name] !== false,
+          dhoti: dhotiStates[entryKey(event, person.name)] !== false,
           uploaded: false
         };
         changed = true;
@@ -992,7 +1007,7 @@ function applyNotStaying(){
           minutesLate: null,
           status: "N",
           date: todayStr(now),
-          dhoti: dhotiStates[person.name] !== false,
+          dhoti: dhotiStates[entryKey(event, person.name)] !== false,
           uploaded: false
         };
         changed = true;
@@ -1112,12 +1127,12 @@ function createPersonRow(event, person, opts){
   info.appendChild(sub);
 
   const dhotiBtn = document.createElement("button");
-  const isWearing = dhotiStates[person.name] !== false;
+  const isWearing = dhotiStates[entryKey(event, person.name)] !== false;
   dhotiBtn.className = "btn-dhoti" + (isWearing ? " active" : "");
   dhotiBtn.textContent = isWearing ? "Dhoti" : "No Dhoti";
   dhotiBtn.addEventListener("click", (ev) => {
     ev.stopPropagation();
-    toggleDhoti(person.name);
+    toggleDhoti(event, person.name);
   });
   info.appendChild(dhotiBtn);
 
