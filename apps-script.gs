@@ -98,9 +98,12 @@ function writeToGrid(sheet, data) {
   if (data.status === "A") {
     // Not tapped in before the reporting window closed.
     value = "A";
+  } else if (data.status === "N") {
+    // Flagged as not currently staying with us.
+    value = "N";
   } else {
     var minutesLate = Number(data.minutesLate) || 0;
-    value = minutesLate > 0 ? ("L" + minutesLate) : "P";
+    value = minutesLate > 0 ? ("L" + minutesLate) : (data.dhoti === false ? "P*" : "P");
   }
   sheet.getRange(row, col).setValue(value);
 }

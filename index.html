@@ -258,6 +258,7 @@
         .status-badge.present { background: var(--success-bg); color: var(--success); }
         .status-badge.late { background: var(--error-bg); color: var(--error); }
         .status-badge.absent { background: var(--error-bg); color: var(--error); }
+        .status-badge.notstaying { background: var(--primary-light); color: var(--primary-dark); }
         .status-badge.pending { background: var(--bg-subtle); color: var(--text-muted); }
 
         .btn-edit {
@@ -593,6 +594,49 @@
         .toast.success { background: var(--success); }
         .toast.error { background: var(--error); }
 
+        .btn-dhoti {
+            display: inline-block;
+            margin-top: 6px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid var(--border);
+            background: var(--bg-subtle);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-dhoti.active {
+            background: var(--success-bg);
+            color: var(--success);
+            border-color: var(--success);
+        }
+
+        .btn-away {
+            display: inline-block;
+            margin-top: 6px;
+            margin-left: 6px;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid var(--border);
+            background: var(--bg-subtle);
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-away.active {
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            border-color: var(--primary);
+        }
+
     </style>
 </head>
 <body>
@@ -765,7 +809,8 @@ const K = {
   E1_OVR:"at_e1_overrides", E1_END_OVR:"at_e1_end_overrides",
   E2:"at_e2_times", E2_END:"at_e2_end_times",
   E3:"at_e3_global", E3_END:"at_e3_end_global",
-  URL:"at_script_url", STAGED:"at_staged"
+  URL:"at_script_url", STAGED:"at_staged", DHOTI:"at_dhoti_states",
+  NOT_STAYING:"at_not_staying_states"
 };
 
 function getJSON(key, fallback){
@@ -784,6 +829,8 @@ let e1EndGlobal = localStorage.getItem(K.E1_END) || DEFAULTS.E1_END;
 let e3Global = localStorage.getItem(K.E3) || DEFAULTS.E3;
 let e3EndGlobal = localStorage.getItem(K.E3_END) || DEFAULTS.E3_END;
 let scriptUrl = localStorage.getItem(K.URL) || "";
+let dhotiStates = getJSON(K.DHOTI, {});
+let notStayingStates = getJSON(K.NOT_STAYING, {});
 
 let e1Overrides = getJSON(K.E1_OVR, {});
 let e1EndOverrides = getJSON(K.E1_END_OVR, {});
@@ -840,6 +887,18 @@ function timeToDateToday(hhmm){
 function cssSafe(s){ return s.replace(/[^a-zA-Z0-9]/g, "_"); }
 function entryKey(event, name){ return event + "|" + name; }
 
+function toggleDhoti(name){
+  dhotiStates[name] = dhotiStates[name] === false ? true : false;
+  saveJSON(K.DHOTI, dhotiStates);
+  renderAll();
+}
+
+function toggleNotStaying(name){
+  notStayingStates[name] = notStayingStates[name] === true ? false : true;
+  saveJSON(K.NOT_STAYING, notStayingStates);
+  renderAll();
+}
+
 function effectiveTime(event, person){
   if(event === 1) return e1Overrides[person.name] || e1Global;
   if(event === 2) return e2Times[person.group] || DEFAULTS.E2;
@@ -872,6 +931,7 @@ function logTap(event, person){
     minutesLate: minutesLate,
     status: status,
     date: todayStr(now),
+    dhoti: dhotiStates[person.name] !== false,
     uploaded: false
   };
   persistEntries();
@@ -899,8 +959,45 @@ function autoMarkAbsentees(){
           minutesLate: null,
           status: "A",
           date: todayStr(now),
+          dhoti: dhotiStates[person.name] !== false,
           uploaded: false
         };
+        changed = true;
+      }
+    });
+  });
+  if(changed) persistEntries();
+}
+
+// People flagged as "not staying with us" get auto-marked "N" for every
+// event as soon as the flag is set (no need to wait for the window to
+// close), and every day after that while the flag stays on. A real tap
+// still overwrites it, same as an auto-marked absentee.
+function applyNotStaying(){
+  const now = new Date();
+  let changed = false;
+  PEOPLE.forEach(person => {
+    const away = notStayingStates[person.name] === true;
+    [1, 2, 3].forEach(event => {
+      const key = entryKey(event, person.name);
+      const existing = entries[key];
+      if(away){
+        if(existing) return;
+        entries[key] = {
+          name: person.name,
+          group: person.group,
+          event: event,
+          reportingTimeUsed: effectiveTime(event, person),
+          actualTimestamp: null,
+          minutesLate: null,
+          status: "N",
+          date: todayStr(now),
+          dhoti: dhotiStates[person.name] !== false,
+          uploaded: false
+        };
+        changed = true;
+      } else if(existing && existing.status === "N" && !existing.uploaded){
+        delete entries[key];
         changed = true;
       }
     });
@@ -1003,6 +1100,8 @@ function createPersonRow(event, person, opts){
   if(e){
     if(e.status === "A"){
       sub.textContent = "Not logged · window closed at " + to12(effectiveEndTime(event, person)) + " · tap to log late";
+    } else if(e.status === "N"){
+      sub.textContent = "Marked not staying · tap to log anyway";
     } else {
       const t = new Date(e.actualTimestamp);
       sub.textContent = "Logged " + to12FromDate(t) + " · deadline " + to12(e.reportingTimeUsed);
@@ -1011,6 +1110,27 @@ function createPersonRow(event, person, opts){
     sub.textContent = "Window " + to12(effectiveTime(event, person)) + "–" + to12(effectiveEndTime(event, person)) + " · tap to log";
   }
   info.appendChild(sub);
+
+  const dhotiBtn = document.createElement("button");
+  const isWearing = dhotiStates[person.name] !== false;
+  dhotiBtn.className = "btn-dhoti" + (isWearing ? " active" : "");
+  dhotiBtn.textContent = isWearing ? "Dhoti" : "No Dhoti";
+  dhotiBtn.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    toggleDhoti(person.name);
+  });
+  info.appendChild(dhotiBtn);
+
+  const awayBtn = document.createElement("button");
+  const isAway = notStayingStates[person.name] === true;
+  awayBtn.className = "btn-away" + (isAway ? " active" : "");
+  awayBtn.textContent = isAway ? "Not Staying" : "Staying";
+  awayBtn.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    toggleNotStaying(person.name);
+  });
+  info.appendChild(awayBtn);
+
   row.appendChild(info);
 
   row.addEventListener("click", () => logTap(event, person));
@@ -1020,6 +1140,9 @@ function createPersonRow(event, person, opts){
     if(e.status === "A"){
       badge.className = "status-badge absent";
       badge.textContent = "Absent";
+    } else if(e.status === "N"){
+      badge.className = "status-badge notstaying";
+      badge.textContent = "Not Staying";
     } else if(e.status === "P"){
       badge.className = "status-badge present";
       badge.textContent = "Present";
@@ -1103,6 +1226,7 @@ function renderUploadBar(){
 
 function renderAll(){
   autoMarkAbsentees();
+  applyNotStaying();
 
   document.getElementById("e1GlobalTime").textContent = to12(e1Global);
   document.getElementById("e1GlobalEndTime").textContent = to12(e1EndGlobal);
@@ -1316,6 +1440,7 @@ document.getElementById("uploadBtn").addEventListener("click", () => {
     return;
   }
   autoMarkAbsentees();
+  applyNotStaying();
   const pendingKeys = Object.keys(entries).filter(k => !entries[k].uploaded && entries[k].event === currentTab);
   if(pendingKeys.length === 0) return;
   const payload = pendingKeys.map(k => {
@@ -1323,7 +1448,7 @@ document.getElementById("uploadBtn").addEventListener("click", () => {
     return {
       name: e.name, group: e.group, event: e.event,
       reportingTimeUsed: e.reportingTimeUsed, actualTimestamp: e.actualTimestamp,
-      minutesLate: e.minutesLate, date: e.date, status: e.status
+      minutesLate: e.minutesLate, date: e.date, status: e.status, dhoti: e.dhoti
     };
   });
   const btn = document.getElementById("uploadBtn");
