@@ -1,0 +1,1364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <title>Morning Attendance</title>
+    <meta name="theme-color" content="#ffffff">
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Attendance">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg: #FFFFFF;
+            --bg-subtle: #FFF9F2;
+            --card: #FFFFFF;
+            --text: #2D3436;
+            --text-muted: #636E72;
+            --primary: #FF8C00;
+            --primary-light: #FFF3E0;
+            --primary-dark: #E67E22;
+            --success: #00B894;
+            --success-bg: #E8F8F5;
+            --error: #D63031;
+            --error-bg: #FFEBEE;
+            --border: #F1F2F6;
+            --shadow: 0 4px 20px rgba(255, 140, 0, 0.08);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            font-family: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-subtle);
+            color: var(--text);
+            padding-bottom: calc(100px + var(--safe-bottom));
+            -webkit-user-select: none;
+            user-select: none;
+            overflow-x: hidden;
+            line-height: 1.5;
+        }
+
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            padding: 20px 20px 10px 20px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 22px;
+            margin: 0;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+        }
+
+        .btn-icon {
+            background: var(--primary-light);
+            border: none;
+            color: var(--primary);
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-icon:active {
+            transform: scale(0.9);
+            background: var(--primary);
+            color: white;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--primary-light);
+            padding: 4px;
+            border-radius: 14px;
+            gap: 4px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            border-radius: 10px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tab-btn.active {
+            background: white;
+            color: var(--primary);
+            box-shadow: 0 2px 8px rgba(255, 140, 0, 0.1);
+        }
+
+        main {
+            padding: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .section-title {
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+            font-weight: 600;
+            display: block;
+        }
+
+        .time-display-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .time-box {
+            flex: 1;
+            background: var(--bg-subtle);
+            padding: 12px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+
+        .time-box:active {
+            background: var(--primary-light);
+            border-color: var(--primary);
+        }
+
+        .time-box label {
+            font-size: 11px;
+            color: var(--text-muted);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .time-value {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .person-row {
+            display: flex;
+            align-items: center;
+            background: var(--card);
+            padding: 16px;
+            border-radius: 18px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .person-row:active {
+            transform: scale(0.98);
+            background: var(--bg-subtle);
+        }
+
+        .sync-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--primary);
+            flex-shrink: 0;
+            margin-right: 12px;
+        }
+
+        .sync-dot.synced { background: var(--success); }
+
+        .person-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .person-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text);
+            display: block;
+        }
+
+        .person-sub {
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 2px;
+            display: block;
+        }
+
+        .status-badge {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 6px 12px;
+            border-radius: 12px;
+            margin-left: 10px;
+            white-space: nowrap;
+        }
+
+        .status-badge.present { background: var(--success-bg); color: var(--success); }
+        .status-badge.late { background: var(--error-bg); color: var(--error); }
+        .status-badge.absent { background: var(--error-bg); color: var(--error); }
+        .status-badge.pending { background: var(--bg-subtle); color: var(--text-muted); }
+
+        .btn-edit {
+            background: var(--primary-light);
+            border: none;
+            color: var(--primary);
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            margin-left: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .btn-edit.has-override {
+            background: var(--primary);
+            color: white;
+        }
+
+        .group-picker {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            padding-bottom: 15px;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
+        }
+
+        .group-picker::-webkit-scrollbar { display: none; }
+
+        .group-btn {
+            white-space: nowrap;
+            padding: 10px 20px;
+            border-radius: 15px;
+            background: white;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .group-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 4px 12px rgba(255, 140, 0, 0.2);
+        }
+
+        .bottom-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 15px 20px calc(15px + var(--safe-bottom));
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 200;
+        }
+
+        .upload-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .count-text {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .btn-upload {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 16px;
+            font-size: 16px;
+            font-weight: 700;
+            box-shadow: 0 8px 20px rgba(255, 140, 0, 0.25);
+            transition: all 0.2s ease;
+        }
+
+        .btn-upload:active { transform: scale(0.96); }
+        .btn-upload:disabled { opacity: 0.5; box-shadow: none; }
+
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            background: white;
+            width: 100%;
+            max-width: 500px;
+            border-radius: 30px 30px 0 0;
+            padding: 30px;
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-overlay.open .modal-content {
+            transform: translateY(0);
+        }
+
+        .modal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        input[type=url], input[type=text] {
+            width: 100%;
+            background: var(--bg-subtle);
+            border: 1px solid var(--border);
+            padding: 14px;
+            border-radius: 12px;
+            font-size: 15px;
+            color: var(--text);
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus { border-color: var(--primary); }
+
+        .btn-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn-group button {
+            flex: 1;
+            padding: 14px;
+            border-radius: 14px;
+            font-weight: 700;
+            border: none;
+            font-size: 15px;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-secondary { background: var(--bg-subtle); color: var(--text); }
+        .btn-danger { background: var(--error-bg); color: var(--error); }
+
+        .override-box {
+            background: var(--primary-light);
+            border-radius: 15px;
+            padding: 15px;
+            margin: -8px 0 12px 0;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+
+        .override-box.open { display: block; }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .tp-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .tp-time {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .tp-time span {
+            padding: 0 8px;
+            border-radius: 10px;
+        }
+
+        .tp-time span.active {
+            color: var(--primary);
+            background: var(--primary-light);
+        }
+
+        .tp-ampm {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .tp-ampm button {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: white;
+            font-weight: 700;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .tp-ampm button.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .tp-clock-container {
+            position: relative;
+            width: 260px;
+            height: 260px;
+            margin: 0 auto 30px auto;
+            background: var(--bg-subtle);
+            border-radius: 50%;
+            touch-action: none;
+        }
+
+        .tp-center {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .tp-hand {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 2px;
+            height: 95px;
+            background: var(--primary);
+            transform-origin: top center;
+        }
+
+        .tp-hand-end {
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            width: 16px;
+            height: 16px;
+            background: var(--primary);
+            border-radius: 50%;
+            transform: translateX(-50%);
+        }
+
+        .tp-num {
+            position: absolute;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            transform: translate(-50%, -50%);
+            cursor: pointer;
+        }
+
+        .tp-num.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 110px;
+            left: 20px;
+            right: 20px;
+            background: var(--text);
+            color: white;
+            padding: 14px 20px;
+            border-radius: 16px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 500;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--error); }
+
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-top">
+        <h1>Attendance</h1>
+        <button class="btn-icon" id="settingsBtn">⚙</button>
+    </div>
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="1">Event 1</button>
+        <button class="tab-btn" data-tab="2">Event 2</button>
+        <button class="tab-btn" data-tab="3">Event 3</button>
+    </div>
+</header>
+
+<main>
+    <!-- TAB 1 -->
+    <section class="panel active" id="panel-1">
+        <div class="card">
+            <span class="section-title">Global Window</span>
+            <div class="time-display-row">
+                <div class="time-box" id="e1GlobalTimeBtn">
+                    <label>Start</label>
+                    <span class="time-value" id="e1GlobalTime">--:--</span>
+                </div>
+                <div class="time-box" id="e1GlobalEndTimeBtn">
+                    <label>End</label>
+                    <span class="time-value" id="e1GlobalEndTime">--:--</span>
+                </div>
+            </div>
+        </div>
+        <div id="e1List"></div>
+    </section>
+
+    <!-- TAB 2 -->
+    <section class="panel" id="panel-2">
+        <div class="group-picker" id="groupPicker"></div>
+        <div class="card">
+            <span class="section-title" id="e2GroupLabel">Select a group</span>
+            <div class="time-display-row">
+                <div class="time-box" id="e2GroupTimeBtn">
+                    <label>Start</label>
+                    <span class="time-value" id="e2GroupTime">--:--</span>
+                </div>
+                <div class="time-box" id="e2GroupEndTimeBtn">
+                    <label>End</label>
+                    <span class="time-value" id="e2GroupEndTime">--:--</span>
+                </div>
+            </div>
+        </div>
+        <div id="e2List"></div>
+    </section>
+
+    <!-- TAB 3 -->
+    <section class="panel" id="panel-3">
+        <div class="card">
+            <span class="section-title">Event 3 Window</span>
+            <div class="time-display-row">
+                <div class="time-box" id="e3GlobalTimeBtn">
+                    <label>Start</label>
+                    <span class="time-value" id="e3GlobalTime">--:--</span>
+                </div>
+                <div class="time-box" id="e3GlobalEndTimeBtn">
+                    <label>End</label>
+                    <span class="time-value" id="e3GlobalEndTime">--:--</span>
+                </div>
+            </div>
+        </div>
+        <div id="e3List"></div>
+    </section>
+</main>
+
+<div class="bottom-bar">
+    <div class="upload-info">
+        <span class="count-text" id="pendingCount">0 entries staged</span>
+        <span style="font-size: 10px; color: var(--primary); font-weight: 700;">READY TO UPLOAD</span>
+    </div>
+    <button class="btn-upload" id="uploadBtn">Upload Now</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settingsModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <span class="modal-title">Settings</span>
+            <button class="btn-icon" id="settingsClose">×</button>
+        </div>
+        <div class="input-group">
+            <label>Apps Script Web App URL</label>
+            <input type="url" id="scriptUrlInput" placeholder="https://script.google.com/macros/s/...">
+            <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">Saved locally on this device.</p>
+        </div>
+        <div class="btn-group">
+            <button class="btn-secondary" id="resetDataBtn" style="color: var(--error);">Clear Data</button>
+            <button class="btn-primary" id="settingsSave">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Time Picker Modal -->
+<div class="modal-overlay" id="timePickerModal">
+    <div class="modal-content" style="text-align: center;">
+        <div class="modal-header">
+            <span class="modal-title" id="tpTitle">Select Time</span>
+        </div>
+
+        <div class="tp-display">
+            <div class="tp-time">
+                <span id="tpHH" class="active">00</span>:<span id="tpMM">00</span>
+            </div>
+            <div class="tp-ampm">
+                <button type="button" id="tpAM">AM</button>
+                <button type="button" id="tpPM">PM</button>
+            </div>
+        </div>
+
+        <div class="tp-clock-container" id="tpClock">
+            <div class="tp-hand" id="tpHand"><div class="tp-hand-end"></div></div>
+            <div class="tp-center"></div>
+        </div>
+
+        <div class="btn-group">
+            <button class="btn-secondary" id="tpCancel">Cancel</button>
+            <button class="btn-primary" id="tpOK">Set Time</button>
+        </div>
+    </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- Master data ---------- */
+const GROUPS = ["Sahadev","Nakula","Arjuna","Bhima","Yudhishthir"];
+
+const PEOPLE = [
+  {name:"HG Nitai Karuna Pr", group:"Yudhishthir"},
+  {name:"Pratyush Pr", group:"Yudhishthir"},
+  {name:"Pawan Pr", group:"Yudhishthir"},
+  {name:"Abhinav Pr", group:"Yudhishthir"},
+  {name:"Sushant Pr", group:"Yudhishthir"},
+  {name:"Tej Pr", group:"Yudhishthir"},
+  {name:"Jay Pr", group:"Yudhishthir"},
+  {name:"Anmol", group:"Yudhishthir"},
+  {name:"Harshal Pr", group:"Arjuna"},
+  {name:"Rishabh Pr", group:"Arjuna"},
+  {name:"Abhishek Pr", group:"Arjuna"},
+  {name:"Yash Pr", group:"Nakula"},
+  {name:"Darshan Pr", group:"Nakula"},
+  {name:"Pratik Pr", group:"Nakula"},
+  {name:"Ayush Pr", group:"Nakula"},
+  {name:"Aman Pr", group:"Sahadev"},
+  {name:"Arpit Pr", group:"Sahadev"},
+  {name:"Om Pr", group:"Sahadev"},
+  {name:"Ishwar Pr", group:"Sahadev"},
+  {name:"Pranav Pr", group:"Sahadev"},
+  {name:"Aditya Pr", group:"Sahadev"},
+  {name:"Rohan Pr", group:"Sahadev"},
+  {name:"Vijay Pr", group:"Sahadev"}
+];
+
+const DEFAULTS = { E1:"04:30", E1_END:"06:45", E2:"06:45", E2_END:"07:30", E3:"07:30", E3_END:"08:00" };
+
+/* ---------- Storage keys ---------- */
+const K = {
+  E1:"at_e1_global", E1_END:"at_e1_end_global",
+  E1_OVR:"at_e1_overrides", E1_END_OVR:"at_e1_end_overrides",
+  E2:"at_e2_times", E2_END:"at_e2_end_times",
+  E3:"at_e3_global", E3_END:"at_e3_end_global",
+  URL:"at_script_url", STAGED:"at_staged"
+};
+
+function getJSON(key, fallback){
+  try{
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch(e){ return fallback; }
+}
+function saveJSON(key, val){
+  localStorage.setItem(key, JSON.stringify(val));
+}
+
+/* ---------- Persistent settings ---------- */
+let e1Global = localStorage.getItem(K.E1) || DEFAULTS.E1;
+let e1EndGlobal = localStorage.getItem(K.E1_END) || DEFAULTS.E1_END;
+let e3Global = localStorage.getItem(K.E3) || DEFAULTS.E3;
+let e3EndGlobal = localStorage.getItem(K.E3_END) || DEFAULTS.E3_END;
+let scriptUrl = localStorage.getItem(K.URL) || "";
+
+let e1Overrides = getJSON(K.E1_OVR, {});
+let e1EndOverrides = getJSON(K.E1_END_OVR, {});
+let e2Times = getJSON(K.E2, {});
+let e2EndTimes = getJSON(K.E2_END, {});
+GROUPS.forEach(g => {
+  if(!e2Times[g]) e2Times[g] = DEFAULTS.E2;
+  if(!e2EndTimes[g]) e2EndTimes[g] = DEFAULTS.E2_END;
+});
+
+/* ---------- Staged entries (persisted per-day) ---------- */
+// Keyed by date so the app survives being closed/killed between events
+// (localStorage, unlike sessionStorage, isn't cleared when the tab/app
+// closes) and a new day never collides with the previous day's entries.
+function stagedKey(d){ return K.STAGED + "_" + todayStr(d || new Date()); }
+function pruneOldStaged(){
+  const keep = stagedKey();
+  for(let i = localStorage.length - 1; i >= 0; i--){
+    const k = localStorage.key(i);
+    if(k && k.indexOf(K.STAGED + "_") === 0 && k !== keep) localStorage.removeItem(k);
+  }
+}
+pruneOldStaged();
+let entries = getJSON(stagedKey(), {});
+function persistEntries(){ saveJSON(stagedKey(), entries); }
+
+let currentTab = 1;
+let currentE2Group = GROUPS[0];
+let openOverrideName = null;
+
+/* ---------- Helpers ---------- */
+function pad2(n){ return String(n).padStart(2, "0"); }
+function to12(hhmm){
+  if(!hhmm) return "--:--";
+  const parts = hhmm.split(":");
+  const h = parseInt(parts[0], 10) || 0;
+  const m = parseInt(parts[1], 10) || 0;
+  const ap = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return h12 + ":" + pad2(m) + " " + ap;
+}
+function to12FromDate(d){
+  const ap = d.getHours() >= 12 ? "PM" : "AM";
+  const h12 = d.getHours() % 12 || 12;
+  return h12 + ":" + pad2(d.getMinutes()) + " " + ap;
+}
+function todayStr(d){ return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }
+function timeToDateToday(hhmm){
+  const parts = hhmm.split(":");
+  const d = new Date();
+  d.setHours(parseInt(parts[0],10), parseInt(parts[1],10), 0, 0);
+  return d;
+}
+function cssSafe(s){ return s.replace(/[^a-zA-Z0-9]/g, "_"); }
+function entryKey(event, name){ return event + "|" + name; }
+
+function effectiveTime(event, person){
+  if(event === 1) return e1Overrides[person.name] || e1Global;
+  if(event === 2) return e2Times[person.group] || DEFAULTS.E2;
+  return e3Global;
+}
+function effectiveEndTime(event, person){
+  if(event === 1) return e1EndOverrides[person.name] || e1EndGlobal;
+  if(event === 2) return e2EndTimes[person.group] || DEFAULTS.E2_END;
+  return e3EndGlobal;
+}
+
+/* ---------- Core logic ---------- */
+function logTap(event, person){
+  const key = entryKey(event, person.name);
+  if(entries[key] && entries[key].uploaded) return;
+
+  const now = new Date();
+  const reportingTime = effectiveTime(event, person);
+  const startDate = timeToDateToday(reportingTime);
+  const diffMs = now - startDate;
+  const minutesLate = diffMs > 0 ? Math.ceil(diffMs / 60000) : 0;
+  const status = minutesLate > 0 ? "L" : "P";
+
+  entries[key] = {
+    name: person.name,
+    group: person.group,
+    event: event,
+    reportingTimeUsed: reportingTime,
+    actualTimestamp: now.toISOString(),
+    minutesLate: minutesLate,
+    status: status,
+    date: todayStr(now),
+    uploaded: false
+  };
+  persistEntries();
+  renderAll();
+  showToast(person.name + " marked " + (status === "P" ? "Present" : ("Late (+" + minutesLate + "m)")), "success");
+}
+
+// Anyone still not logged once their event's window has closed gets
+// auto-staged as absent ("A"); a later tap still overwrites it.
+function autoMarkAbsentees(){
+  const now = new Date();
+  let changed = false;
+  [1, 2, 3].forEach(event => {
+    PEOPLE.forEach(person => {
+      const key = entryKey(event, person.name);
+      if(entries[key]) return;
+      const endTime = effectiveEndTime(event, person);
+      if(now >= timeToDateToday(endTime)){
+        entries[key] = {
+          name: person.name,
+          group: person.group,
+          event: event,
+          reportingTimeUsed: effectiveTime(event, person),
+          actualTimestamp: null,
+          minutesLate: null,
+          status: "A",
+          date: todayStr(now),
+          uploaded: false
+        };
+        changed = true;
+      }
+    });
+  });
+  if(changed) persistEntries();
+}
+
+/* ---------- Rendering ---------- */
+function createTimeBox(label, value, title, onSave){
+  const wrap = document.createElement("div");
+  wrap.className = "time-box";
+  const lab = document.createElement("label");
+  lab.textContent = label;
+  wrap.appendChild(lab);
+  const val = document.createElement("span");
+  val.className = "time-value";
+  val.textContent = to12(value);
+  wrap.appendChild(val);
+  wrap.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    openTimePicker(value, title, onSave);
+  });
+  return wrap;
+}
+
+function createOverrideBox(person){
+  const box = document.createElement("div");
+  box.className = "override-box" + (openOverrideName === person.name ? " open" : "");
+  box.id = "ovr-" + cssSafe(person.name);
+
+  const row = document.createElement("div");
+  row.className = "time-display-row";
+  row.style.marginBottom = "10px";
+  row.appendChild(createTimeBox("Start", e1Overrides[person.name] || e1Global, person.name + " - Start", (v) => {
+    e1Overrides[person.name] = v;
+    saveJSON(K.E1_OVR, e1Overrides);
+    renderAll();
+  }));
+  row.appendChild(createTimeBox("End", e1EndOverrides[person.name] || e1EndGlobal, person.name + " - End", (v) => {
+    e1EndOverrides[person.name] = v;
+    saveJSON(K.E1_END_OVR, e1EndOverrides);
+    renderAll();
+  }));
+  box.appendChild(row);
+
+  const btnRow = document.createElement("div");
+  btnRow.className = "btn-group";
+
+  const resetBtn = document.createElement("button");
+  resetBtn.className = "btn-secondary";
+  resetBtn.textContent = "Reset";
+  resetBtn.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    delete e1Overrides[person.name];
+    delete e1EndOverrides[person.name];
+    saveJSON(K.E1_OVR, e1Overrides);
+    saveJSON(K.E1_END_OVR, e1EndOverrides);
+    renderAll();
+  });
+  btnRow.appendChild(resetBtn);
+
+  const doneBtn = document.createElement("button");
+  doneBtn.className = "btn-primary";
+  doneBtn.textContent = "Done";
+  doneBtn.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    openOverrideName = null;
+    renderAll();
+  });
+  btnRow.appendChild(doneBtn);
+
+  box.appendChild(btnRow);
+  return box;
+}
+
+function createPersonRow(event, person, opts){
+  opts = opts || {};
+  const e = entries[entryKey(event, person.name)];
+  const container = document.createElement("div");
+
+  if(opts.allowOverride) container.appendChild(createOverrideBox(person));
+
+  const row = document.createElement("div");
+  row.className = "person-row";
+
+  const dot = document.createElement("span");
+  dot.className = "sync-dot" + (e && e.uploaded ? " synced" : "");
+  dot.style.visibility = e ? "visible" : "hidden";
+  row.appendChild(dot);
+
+  const info = document.createElement("div");
+  info.className = "person-info";
+  const nameEl = document.createElement("span");
+  nameEl.className = "person-name";
+  nameEl.textContent = person.name;
+  info.appendChild(nameEl);
+
+  const sub = document.createElement("span");
+  sub.className = "person-sub";
+  if(e){
+    if(e.status === "A"){
+      sub.textContent = "Not logged · window closed at " + to12(effectiveEndTime(event, person)) + " · tap to log late";
+    } else {
+      const t = new Date(e.actualTimestamp);
+      sub.textContent = "Logged " + to12FromDate(t) + " · deadline " + to12(e.reportingTimeUsed);
+    }
+  } else {
+    sub.textContent = "Window " + to12(effectiveTime(event, person)) + "–" + to12(effectiveEndTime(event, person)) + " · tap to log";
+  }
+  info.appendChild(sub);
+  row.appendChild(info);
+
+  row.addEventListener("click", () => logTap(event, person));
+
+  const badge = document.createElement("span");
+  if(e){
+    if(e.status === "A"){
+      badge.className = "status-badge absent";
+      badge.textContent = "Absent";
+    } else if(e.status === "P"){
+      badge.className = "status-badge present";
+      badge.textContent = "Present";
+    } else {
+      badge.className = "status-badge late";
+      badge.textContent = "+" + e.minutesLate + " min late";
+    }
+  } else {
+    badge.className = "status-badge pending";
+    badge.textContent = "—";
+  }
+  row.appendChild(badge);
+
+  if(opts.allowOverride){
+    const hasOverride = !!(e1Overrides[person.name] || e1EndOverrides[person.name]);
+    const edit = document.createElement("button");
+    edit.className = "btn-edit" + (hasOverride ? " has-override" : "");
+    edit.title = hasOverride ? "Custom time set — won't follow the window above" : "Set a custom time for this person";
+    edit.textContent = "✎";
+    edit.addEventListener("click", (ev) => {
+      ev.stopPropagation();
+      openOverrideName = openOverrideName === person.name ? null : person.name;
+      renderAll();
+    });
+    row.appendChild(edit);
+  }
+
+  container.appendChild(row);
+  return container;
+}
+
+function renderE1(){
+  const list = document.getElementById("e1List");
+  list.innerHTML = "";
+  PEOPLE.forEach(p => list.appendChild(createPersonRow(1, p, {allowOverride:true})));
+}
+
+function renderGroupPicker(){
+  const picker = document.getElementById("groupPicker");
+  picker.innerHTML = "";
+  GROUPS.forEach(g => {
+    const b = document.createElement("button");
+    b.className = "group-btn" + (g === currentE2Group ? " active" : "");
+    b.textContent = g;
+    b.addEventListener("click", () => { currentE2Group = g; renderAll(); });
+    picker.appendChild(b);
+  });
+}
+
+function renderE2(){
+  document.getElementById("e2GroupLabel").textContent = currentE2Group + " Window";
+  document.getElementById("e2GroupTime").textContent = to12(e2Times[currentE2Group]);
+  document.getElementById("e2GroupEndTime").textContent = to12(e2EndTimes[currentE2Group]);
+  const list = document.getElementById("e2List");
+  list.innerHTML = "";
+  const members = PEOPLE.filter(p => p.group === currentE2Group);
+  if(members.length === 0){
+    const msg = document.createElement("div");
+    msg.style.textAlign = "center";
+    msg.style.padding = "40px 10px";
+    msg.style.color = "var(--text-muted)";
+    msg.style.fontSize = "14px";
+    msg.textContent = "No members in " + currentE2Group + " yet.";
+    list.appendChild(msg);
+    return;
+  }
+  members.forEach(p => list.appendChild(createPersonRow(2, p)));
+}
+
+function renderE3(){
+  const list = document.getElementById("e3List");
+  list.innerHTML = "";
+  PEOPLE.forEach(p => list.appendChild(createPersonRow(3, p)));
+}
+
+function renderUploadBar(){
+  const pending = Object.keys(entries).filter(k => !entries[k].uploaded && entries[k].event === currentTab).length;
+  document.getElementById("pendingCount").textContent = pending + " entr" + (pending===1?"y":"ies") + " staged for Event " + currentTab;
+  document.getElementById("uploadBtn").disabled = pending === 0;
+}
+
+function renderAll(){
+  autoMarkAbsentees();
+
+  document.getElementById("e1GlobalTime").textContent = to12(e1Global);
+  document.getElementById("e1GlobalEndTime").textContent = to12(e1EndGlobal);
+  document.getElementById("e3GlobalTime").textContent = to12(e3Global);
+  document.getElementById("e3GlobalEndTime").textContent = to12(e3EndGlobal);
+
+  renderE1();
+  renderGroupPicker();
+  renderE2();
+  renderE3();
+  renderUploadBar();
+}
+
+/* ---------- Clock-dial time picker ---------- */
+const tpModal = document.getElementById("timePickerModal");
+const tpClock = document.getElementById("tpClock");
+const tpHand = document.getElementById("tpHand");
+const tpHH = document.getElementById("tpHH");
+const tpMM = document.getElementById("tpMM");
+const tpAM = document.getElementById("tpAM");
+const tpPM = document.getElementById("tpPM");
+const tpTitle = document.getElementById("tpTitle");
+
+let tpState = { hh: 12, mm: 0, ap: "AM", mode: "hours" };
+let tpCallback = null;
+
+function openTimePicker(value, title, cb){
+  const parts = (value || "00:00").split(":");
+  const h24 = parseInt(parts[0], 10) || 0;
+  const m = parseInt(parts[1], 10) || 0;
+  tpState = { hh: h24 % 12 || 12, mm: m, ap: h24 >= 12 ? "PM" : "AM", mode: "hours" };
+  tpCallback = cb;
+  tpTitle.textContent = title || "Select time";
+  renderClock();
+  tpModal.classList.add("open");
+}
+
+function renderClock(){
+  tpClock.querySelectorAll(".tp-num").forEach(n => n.remove());
+  const isHrs = tpState.mode === "hours";
+  for(let i = 0; i < 12; i++){
+    const deg = i * 30;
+    const rad = (deg - 90) * Math.PI / 180;
+    const x = 130 + 100 * Math.cos(rad);
+    const y = 130 + 100 * Math.sin(rad);
+
+    const el = document.createElement("div");
+    el.className = "tp-num";
+    const val = isHrs ? (i === 0 ? 12 : i) : i * 5;
+    el.textContent = isHrs ? String(val) : pad2(val);
+    el.style.left = x + "px";
+    el.style.top = y + "px";
+
+    const target = isHrs ? tpState.hh : tpState.mm;
+    if(val === target) el.classList.add("active");
+
+    el.addEventListener("click", () => {
+      if(isHrs){ tpState.hh = val; tpState.mode = "minutes"; renderClock(); }
+      else { tpState.mm = val; updateHand(); }
+    });
+    tpClock.appendChild(el);
+  }
+  updateHand();
+}
+
+function updateHand(){
+  const isHrs = tpState.mode === "hours";
+  const deg = isHrs ? (tpState.hh % 12) * 30 : tpState.mm * 6;
+  tpHand.style.transform = "translateX(-50%) rotate(" + deg + "deg)";
+
+  tpHH.textContent = pad2(tpState.hh);
+  tpMM.textContent = pad2(tpState.mm);
+  tpHH.className = isHrs ? "active" : "";
+  tpMM.className = !isHrs ? "active" : "";
+  tpAM.className = tpState.ap === "AM" ? "active" : "";
+  tpPM.className = tpState.ap === "PM" ? "active" : "";
+}
+
+function tpAngleFromPointer(clientX, clientY){
+  const rect = tpClock.getBoundingClientRect();
+  const cx = rect.left + rect.width / 2;
+  const cy = rect.top + rect.height / 2;
+  let angle = Math.atan2(clientX - cx, cy - clientY) * 180 / Math.PI;
+  if(angle < 0) angle += 360;
+  return angle;
+}
+
+let tpDragging = false;
+function tpHandleDrag(clientX, clientY){
+  const angle = tpAngleFromPointer(clientX, clientY);
+  if(tpState.mode === "hours"){
+    const h = Math.round(angle / 30) % 12;
+    tpState.hh = h === 0 ? 12 : h;
+  } else {
+    tpState.mm = Math.round(angle / 6) % 60;
+  }
+  updateHand();
+}
+function tpPointerDown(ev){
+  tpDragging = true;
+  const pt = ev.touches ? ev.touches[0] : ev;
+  tpHandleDrag(pt.clientX, pt.clientY);
+  ev.preventDefault();
+}
+function tpPointerMove(ev){
+  if(!tpDragging) return;
+  const pt = ev.touches ? ev.touches[0] : ev;
+  tpHandleDrag(pt.clientX, pt.clientY);
+  ev.preventDefault();
+}
+function tpPointerUp(){
+  if(!tpDragging) return;
+  tpDragging = false;
+  if(tpState.mode === "hours"){ tpState.mode = "minutes"; renderClock(); }
+}
+tpClock.addEventListener("mousedown", tpPointerDown);
+tpClock.addEventListener("touchstart", tpPointerDown, {passive:false});
+window.addEventListener("mousemove", tpPointerMove);
+window.addEventListener("touchmove", tpPointerMove, {passive:false});
+window.addEventListener("mouseup", tpPointerUp);
+window.addEventListener("touchend", tpPointerUp);
+
+tpHH.addEventListener("click", () => { tpState.mode = "hours"; renderClock(); });
+tpMM.addEventListener("click", () => { tpState.mode = "minutes"; renderClock(); });
+tpAM.addEventListener("click", () => { tpState.ap = "AM"; updateHand(); });
+tpPM.addEventListener("click", () => { tpState.ap = "PM"; updateHand(); });
+
+document.getElementById("tpCancel").addEventListener("click", () => {
+  tpModal.classList.remove("open");
+});
+document.getElementById("tpOK").addEventListener("click", () => {
+  let h24 = tpState.hh % 12;
+  if(tpState.ap === "PM") h24 += 12;
+  const value = pad2(h24) + ":" + pad2(tpState.mm);
+  tpModal.classList.remove("open");
+  if(tpCallback) tpCallback(value);
+});
+
+/* ---------- Global time inputs ---------- */
+document.getElementById("e1GlobalTimeBtn").addEventListener("click", () => {
+  openTimePicker(e1Global, "Event 1 · start", (v) => { e1Global = v; localStorage.setItem(K.E1, v); renderAll(); });
+});
+document.getElementById("e1GlobalEndTimeBtn").addEventListener("click", () => {
+  openTimePicker(e1EndGlobal, "Event 1 · end", (v) => { e1EndGlobal = v; localStorage.setItem(K.E1_END, v); renderAll(); });
+});
+document.getElementById("e3GlobalTimeBtn").addEventListener("click", () => {
+  openTimePicker(e3Global, "Event 3 · start", (v) => { e3Global = v; localStorage.setItem(K.E3, v); renderAll(); });
+});
+document.getElementById("e3GlobalEndTimeBtn").addEventListener("click", () => {
+  openTimePicker(e3EndGlobal, "Event 3 · end", (v) => { e3EndGlobal = v; localStorage.setItem(K.E3_END, v); renderAll(); });
+});
+document.getElementById("e2GroupTimeBtn").addEventListener("click", () => {
+  openTimePicker(e2Times[currentE2Group], currentE2Group + " · start", (v) => { e2Times[currentE2Group] = v; saveJSON(K.E2, e2Times); renderAll(); });
+});
+document.getElementById("e2GroupEndTimeBtn").addEventListener("click", () => {
+  openTimePicker(e2EndTimes[currentE2Group], currentE2Group + " · end", (v) => { e2EndTimes[currentE2Group] = v; saveJSON(K.E2_END, e2EndTimes); renderAll(); });
+});
+
+/* ---------- Tabs ---------- */
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => {
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+    btn.classList.add("active");
+    document.getElementById("panel-" + btn.dataset.tab).classList.add("active");
+    currentTab = parseInt(btn.dataset.tab, 10);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    renderUploadBar();
+  });
+});
+
+/* ---------- Settings modal ---------- */
+const settingsModal = document.getElementById("settingsModal");
+document.getElementById("settingsBtn").addEventListener("click", () => {
+  document.getElementById("scriptUrlInput").value = scriptUrl;
+  settingsModal.classList.add("open");
+});
+document.getElementById("settingsClose").addEventListener("click", () => {
+  settingsModal.classList.remove("open");
+});
+document.getElementById("settingsSave").addEventListener("click", () => {
+  scriptUrl = document.getElementById("scriptUrlInput").value.trim();
+  localStorage.setItem(K.URL, scriptUrl);
+  settingsModal.classList.remove("open");
+  showToast("Settings saved", "success");
+});
+document.getElementById("resetDataBtn").addEventListener("click", () => {
+  if(!confirm("Clear all staged/logged entries on this device? This cannot be undone.")) return;
+  entries = {};
+  persistEntries();
+  settingsModal.classList.remove("open");
+  renderAll();
+  showToast("Staged entries cleared", "success");
+});
+
+/* ---------- Toast ---------- */
+let toastTimer;
+function showToast(msg, kind){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (kind ? " " + kind : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 3200);
+}
+
+/* ---------- Upload ---------- */
+document.getElementById("uploadBtn").addEventListener("click", () => {
+  if(!scriptUrl){
+    showToast("Set the Apps Script URL in Settings first", "error");
+    settingsModal.classList.add("open");
+    return;
+  }
+  autoMarkAbsentees();
+  const pendingKeys = Object.keys(entries).filter(k => !entries[k].uploaded && entries[k].event === currentTab);
+  if(pendingKeys.length === 0) return;
+  const payload = pendingKeys.map(k => {
+    const e = entries[k];
+    return {
+      name: e.name, group: e.group, event: e.event,
+      reportingTimeUsed: e.reportingTimeUsed, actualTimestamp: e.actualTimestamp,
+      minutesLate: e.minutesLate, date: e.date, status: e.status
+    };
+  });
+  const btn = document.getElementById("uploadBtn");
+  btn.disabled = true;
+  btn.textContent = "Uploading…";
+
+  fetch(scriptUrl, {
+    method: "POST",
+    headers: {"Content-Type": "text/plain;charset=utf-8"},
+    body: JSON.stringify(payload)
+  }).then(res => {
+    if(!res.ok) throw new Error("Bad response " + res.status);
+    return res.text();
+  }).then(() => {
+    pendingKeys.forEach(k => { entries[k].uploaded = true; });
+    persistEntries();
+    showToast("Uploaded " + payload.length + " entries", "success");
+    btn.textContent = "Upload Now";
+    renderAll();
+  }).catch(() => {
+    showToast("Upload failed, try again", "error");
+    btn.textContent = "Upload Now";
+    btn.disabled = false;
+  });
+});
+
+/* ---------- Service worker (PWA) ---------- */
+if("serviceWorker" in navigator){
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+
+renderAll();
+})();
+</script>
+</body>
+</html>
