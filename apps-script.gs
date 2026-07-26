@@ -1,6 +1,8 @@
 /**
  * Container-bound Apps Script for the Morning Attendance Google Sheet.
- * Paste this into Extensions > Apps Script from within the Sheet itself.
+ * Deployed via clasp (see .clasp.json) — `npx clasp push` syncs this file
+ * and appsscript.json to the live script; `npx clasp deploy -i <id>` publishes
+ * a pushed change to an existing Web App deployment (keeps its /exec URL).
  *
  * Sheet setup expected:
  *  - A "Template" tab: names in column C (row 2 downward, row 1 = header),
@@ -12,9 +14,8 @@
  *  - Optional "Log" tab (name | group | event | reportingTimeUsed |
  *    actualTimestamp | minutesLate | date) kept as a flat audit trail.
  *
- * Deploy: Extensions > Apps Script > Deploy > New deployment > Web app,
- * execute as "Me", access "Anyone" — copy the /exec URL into the app's
- * Settings panel (gear icon, top right of index.html).
+ * The deployment's /exec URL goes into the app's Settings panel (gear icon,
+ * top right of index.html).
  *
  * One-time: run setupWeeklyTrigger() once from the Apps Script editor
  * (authorize when prompted) to install the automatic Sunday-night rotation.

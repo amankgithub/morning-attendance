@@ -1,4 +1,4 @@
-# IMPORTANT
+ # IMPORTANT
 Stop whenever /compact should be used.
 Keep ouputs as short,consise as possible
 Dont write every step of the task while doing it, just complete it and report.
@@ -6,17 +6,20 @@ Dont write every step of the task while doing it, just complete it and report.
 # CLAUDE.md — agent index (high level)
 
 Attendance-taking PWA for a 3-events-per-morning roll call, with a Google Sheet
-backend. Zero build step, no git repo, no package.json — static files served as-is.
+backend. Zero build step for the frontend (static files served as-is); the
+backend is a clasp-managed Apps Script project (`package.json` only pulls in
+`@google/clasp` as a devDependency).
 
 ## FILES
 
 | File | Role |
 |---|---|
-| `index.html` | The app (dark theme). All UI, state, and upload logic live here. Registers `sw.js`. |
-| `apps-script.gs` | Backend. Paste into Extensions>Apps Script of the target Google Sheet (container-bound). Receives POSTs, writes attendance codes into a grid, handles weekly sheet rotation. |
-| `manifest.json` | PWA manifest, `start_url:"./index.html"`. |
-| `sw.js` | Service worker. Network-first for the app shell (`index.html`) so edits reach devices immediately; cache-first for icons/manifest. Falls back to cache when offline. |
-| `icon-192.png`, `icon-512.png` | PWA icons. |
+| `index.html` | The app (dark theme) — all UI, state, and upload logic in one file. Registers `sw.js`. |
+| `apps-script.gs` | Backend, container-bound to the Sheet — see APPS SCRIPT BACKEND below. |
+| `.claspignore` | Restricts `clasp push` to `apps-script.gs` + `appsscript.json` — everything else (index.html, manifest.json, icons) must stay excluded or it gets swept into the Apps Script project as bogus source. |
+| `sw.js` | Service worker: network-first for `index.html` (edits reach devices immediately), cache-first for icons/manifest; falls back to cache offline. |
+
+(`appsscript.json`, `.clasp.json`, `manifest.json`, icons are standard scaffolding/assets — no project-specific behavior worth indexing.)
 
 ## DATA MODEL
 
@@ -44,6 +47,12 @@ backend. Zero build step, no git repo, no package.json — static files served a
 - `rotateWeek()` archives the current week's sheet and duplicates `Template` as
   the new `current`; runs off a Sunday 22:00 trigger installed once manually via
   `setupWeeklyTrigger()`.
+- Deploy flow: `npx clasp push` updates the script project's HEAD code only.
+  The live `/exec` URL (pasted into the app's Settings) is pinned to a specific
+  *versioned* deployment, so a push alone does not go live — follow it with
+  `npx clasp deploy -i <deploymentId>` (see `npx clasp deployments` for the id)
+  to publish a new version to that same deployment and keep the URL stable.
+  Live deployment id: `AKfycbyGpusHprC25Bm5QJ6Gk0QwM8_an8eECw1jKFer68qf6pfGLbHlX-foItU9zy9v2mX82w`.
 
 ## GOTCHAS
 
