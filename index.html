@@ -956,6 +956,15 @@ function unlogTap(event, person){
   const key = entryKey(event, person.name);
   const existing = entries[key];
   if(!existing || existing.cleared || existing.uploaded) return;
+  // A "Not Staying" badge is driven by the person-level flag (the Staying/
+  // Not Staying button beside Dhoti), not just this one event's entry.
+  // Undoing it here without also flipping that flag back would leave the
+  // button stuck on "Not Staying" and the other two events still auto-
+  // marked N — clear the flag too so badge and button stay in sync.
+  if(existing.status === "N" && notStayingStates[person.name] === true){
+    notStayingStates[person.name] = false;
+    saveJSON(K.NOT_STAYING, notStayingStates);
+  }
   entries[key] = { cleared: true };
   persistEntries();
   renderAll();
