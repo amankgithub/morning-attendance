@@ -726,6 +726,9 @@
             <p style="font-size: 11px; color: var(--text-muted); margin-top: 8px;">Saved locally on this device.</p>
         </div>
         <div class="btn-group">
+            <button class="btn-secondary" id="startNewWeekBtn">Start New Week</button>
+        </div>
+        <div class="btn-group">
             <button class="btn-secondary" id="resetDataBtn" style="color: var(--error);">Clear Data</button>
             <button class="btn-primary" id="settingsSave">Save Changes</button>
         </div>
@@ -1407,6 +1410,32 @@ document.getElementById("resetDataBtn").addEventListener("click", () => {
   settingsModal.classList.remove("open");
   renderAll();
   showToast("Staged entries cleared", "success");
+});
+document.getElementById("startNewWeekBtn").addEventListener("click", () => {
+  if(!scriptUrl){
+    showToast("Set the Apps Script URL in Settings first", "error");
+    return;
+  }
+  if(!confirm("Archive this week's sheet and start a fresh one?")) return;
+  const btn = document.getElementById("startNewWeekBtn");
+  btn.disabled = true;
+  btn.textContent = "Starting new week…";
+  fetch(scriptUrl, {
+    method: "POST",
+    headers: {"Content-Type": "text/plain;charset=utf-8"},
+    body: JSON.stringify({ action: "rotateWeek" })
+  }).then(res => {
+    if(!res.ok) throw new Error("Bad response " + res.status);
+    return res.json();
+  }).then(data => {
+    if(!data.ok) throw new Error(data.error || "Unknown error");
+    showToast("New week started", "success");
+  }).catch(err => {
+    showToast("Failed: " + err.message, "error");
+  }).finally(() => {
+    btn.disabled = false;
+    btn.textContent = "Start New Week";
+  });
 });
 
 /* ---------- Toast ---------- */

@@ -37,16 +37,21 @@ backend is a clasp-managed Apps Script project (`package.json` only pulls in
 
 ## APPS SCRIPT BACKEND
 
-- `doPost(e)` — HTTP entry point; body = JSON array of entry objects; writes into
-  the `current` sheet grid; per-row errors go to an `Errors` sheet without
-  aborting the batch.
+- `doPost(e)` — HTTP entry point; body is either a JSON array of entry objects
+  (normal attendance write into the `current` sheet grid, per-row errors go to
+  an `Errors` sheet without aborting the batch) or a JSON object
+  `{action: "rotateWeek"}` that just calls `rotateWeek()` and returns
+  `{ok, error?}`.
 - Grid column formula assumes **exactly 3 events/day**. Adding a 4th event
   requires changing that stride and the sheet layout.
 - New people added to `PEOPLE` must also exist as a row in the `Template` sheet,
   matched by exact normalized name — otherwise their taps silently error.
 - `rotateWeek()` archives the current week's sheet and duplicates `Template` as
-  the new `current`; runs off a Sunday 22:00 trigger installed once manually via
-  `setupWeeklyTrigger()`.
+  the new `current`. Three ways to trigger it: the automatic Sunday 22:00
+  time-based trigger (`setupWeeklyTrigger()`, installed once), the desktop-only
+  "Attendance > Start New Week" Sheets menu (`onOpen()` — doesn't render on
+  mobile Sheets), or the "Start New Week" button in the PWA's Settings panel
+  (posts `{action: "rotateWeek"}` to the script URL — works on mobile).
 - Deploy flow: `npx clasp push` updates the script project's HEAD code only.
   The live `/exec` URL (pasted into the app's Settings) is pinned to a specific
   *versioned* deployment, so a push alone does not go live — follow it with

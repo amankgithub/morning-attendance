@@ -20,7 +20,10 @@
  * One-time: run setupWeeklyTrigger() once from the Apps Script editor
  * (authorize when prompted) to install the automatic Sunday-night rotation.
  * A manual "Attendance > Start New Week" menu item is also added on open,
- * as a backup/override if you need to rotate at a different moment.
+ * as a backup/override if you need to rotate at a different moment — but
+ * that Sheets custom menu doesn't render in the mobile Sheets app, so the
+ * PWA's Settings panel also has a "Start New Week" button that POSTs
+ * {action: "rotateWeek"} to this same endpoint for mobile use.
  */
 
 var TEMPLATE_SHEET = "Template";
@@ -53,7 +56,22 @@ function getSheetCI(ss, name) {
 // so header rows (which never match a real name) are skipped naturally.
 
 function doPost(e) {
-  var rows = JSON.parse(e.postData.contents); // array of entries
+  var payload = JSON.parse(e.postData.contents);
+
+  if (payload && !Array.isArray(payload) && payload.action === "rotateWeek") {
+    try {
+      rotateWeek();
+      return ContentService
+        .createTextOutput(JSON.stringify({ ok: true }))
+        .setMimeType(ContentService.MimeType.JSON);
+    } catch (err) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ ok: false, error: err.message }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+  }
+
+  var rows = payload; // array of entries
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var log = getSheetCI(ss, LOG_SHEET);
   var current = getSheetCI(ss, CURRENT_SHEET);
