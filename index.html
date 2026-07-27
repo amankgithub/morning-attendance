@@ -1451,6 +1451,10 @@ document.getElementById("resetDataBtn").addEventListener("click", () => {
   if(!confirm("Clear all staged/logged entries on this device? This cannot be undone.")) return;
   entries = {};
   persistEntries();
+  dhotiStates = {};
+  persistDhoti();
+  notStayingStates = {};
+  saveJSON(K.NOT_STAYING, notStayingStates);
   settingsModal.classList.remove("open");
   renderAll();
   showToast("Staged entries cleared", "success");
