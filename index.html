@@ -253,6 +253,7 @@
         .status-badge.absent { background: var(--error-bg); color: var(--error); }
         .status-badge.notstaying { background: var(--primary-light); color: var(--primary-dark); }
         .status-badge.pending { background: var(--bg-subtle); color: var(--text-muted); }
+        .status-badge:not(.pending) { cursor: pointer; }
 
         .btn-edit {
             background: var(--primary-light);
@@ -945,6 +946,22 @@ function logTap(event, person){
   showToast(person.name + " marked " + (status === "P" ? "Present" : ("Late (+" + minutesLate + "m)")), "success");
 }
 
+// Undo a tap. Rather than deleting the key outright, leave a "cleared"
+// placeholder behind — autoMarkAbsentees/applyNotStaying only skip a person
+// when *something* already sits at their key, so an outright delete would
+// have them instantly re-marked A/N on the very next renderAll() if their
+// window/flag still applies. The placeholder renders identically to "no
+// entry" everywhere else and a real tap overwrites it normally.
+function unlogTap(event, person){
+  const key = entryKey(event, person.name);
+  const existing = entries[key];
+  if(!existing || existing.cleared || existing.uploaded) return;
+  entries[key] = { cleared: true };
+  persistEntries();
+  renderAll();
+  showToast(person.name + " reset", "success");
+}
+
 // Anyone still not logged once their event's window has closed gets
 // auto-staged as absent ("A"); a later tap still overwrites it.
 function autoMarkAbsentees(){
@@ -1082,6 +1099,7 @@ function createOverrideBox(person){
 function createPersonRow(event, person, opts){
   opts = opts || {};
   const e = entries[entryKey(event, person.name)];
+  const active = !!(e && !e.cleared);
   const container = document.createElement("div");
 
   if(opts.allowOverride) container.appendChild(createOverrideBox(person));
@@ -1090,8 +1108,8 @@ function createPersonRow(event, person, opts){
   row.className = "person-row";
 
   const dot = document.createElement("span");
-  dot.className = "sync-dot" + (e && e.uploaded ? " synced" : "");
-  dot.style.visibility = e ? "visible" : "hidden";
+  dot.className = "sync-dot" + (active && e.uploaded ? " synced" : "");
+  dot.style.visibility = active ? "visible" : "hidden";
   row.appendChild(dot);
 
   const info = document.createElement("div");
@@ -1123,10 +1141,12 @@ function createPersonRow(event, person, opts){
 
   row.appendChild(info);
 
-  row.addEventListener("click", () => logTap(event, person));
+  // Once a person has an active entry, only the badge (tap to undo) reacts;
+  // the rest of the row goes back to logging once it's pending again.
+  row.addEventListener("click", () => { if(!active) logTap(event, person); });
 
   const badge = document.createElement("span");
-  if(e){
+  if(active){
     if(e.status === "A"){
       badge.className = "status-badge absent";
       badge.textContent = "Absent";
@@ -1144,6 +1164,10 @@ function createPersonRow(event, person, opts){
     badge.className = "status-badge pending";
     badge.textContent = "—";
   }
+  badge.addEventListener("click", (ev) => {
+    ev.stopPropagation();
+    if(active) unlogTap(event, person);
+  });
   row.appendChild(badge);
 
   if(opts.allowOverride){
