@@ -124,6 +124,59 @@
             box-shadow: 0 2px 8px rgba(255, 140, 0, 0.1);
         }
 
+        .force-present-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 10px;
+            padding: 8px 12px;
+            border-radius: 12px;
+            background: var(--bg-subtle);
+        }
+
+        .force-present-row span {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .force-present-row.active span {
+            color: var(--primary-dark);
+        }
+
+        .toggle-switch {
+            flex-shrink: 0;
+            width: 42px;
+            height: 24px;
+            border-radius: 12px;
+            border: none;
+            background: var(--border);
+            position: relative;
+            transition: background 0.2s ease;
+        }
+
+        .toggle-switch::after {
+            content: "";
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease;
+        }
+
+        .toggle-switch.active {
+            background: var(--primary);
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(18px);
+        }
+
         main {
             padding: 16px;
             max-width: 600px;
@@ -652,6 +705,10 @@
         <button class="tab-btn" data-tab="2">MC</button>
         <button class="tab-btn" data-tab="3">MA</button>
     </div>
+    <div class="force-present-row" id="forcePresentRow">
+        <span>Mark taps as on-time (ignore late)</span>
+        <button class="toggle-switch" id="forcePresentToggle" role="switch" aria-checked="false"></button>
+    </div>
 </header>
 
 <main>
@@ -877,6 +934,10 @@ function persistDhoti(){ saveJSON(dhotiKey(), dhotiStates); }
 
 let currentTab = 1;
 let currentE2Group = GROUPS[0];
+// Not persisted: this is a "flip it on right before tapping a late arrival"
+// override, not a standing setting — it should never survive a reload and
+// silently mark a whole future day present.
+let forcePresentMode = false;
 let openOverrideName = null;
 
 /* ---------- Helpers ---------- */
@@ -904,6 +965,15 @@ function toggleDhoti(event, name){
   const key = entryKey(event, name);
   dhotiStates[key] = dhotiStates[key] === false ? true : false;
   persistDhoti();
+  // entries[key].dhoti is snapshotted at tap time; if the person was already
+  // tapped in (e.g. toggled after logging Present, not before), keep the
+  // live entry's flag in sync so the upload reflects the current toggle
+  // instead of whatever it was when they were first marked.
+  const existing = entries[key];
+  if(existing && !existing.cleared && !existing.uploaded){
+    existing.dhoti = dhotiStates[key] !== false;
+    persistEntries();
+  }
   renderAll();
 }
 
@@ -933,7 +1003,7 @@ function logTap(event, person){
   const reportingTime = effectiveTime(event, person);
   const startDate = timeToDateToday(reportingTime);
   const diffMs = now - startDate;
-  const minutesLate = diffMs > 0 ? Math.ceil(diffMs / 60000) : 0;
+  const minutesLate = (diffMs > 0 && !forcePresentMode) ? Math.ceil(diffMs / 60000) : 0;
   const status = minutesLate > 0 ? "L" : "P";
 
   entries[key] = {
@@ -950,7 +1020,8 @@ function logTap(event, person){
   };
   persistEntries();
   renderAll();
-  showToast(person.name + " marked " + (status === "P" ? "Present" : ("Late (+" + minutesLate + "m)")), "success");
+  const forced = forcePresentMode && diffMs > 0;
+  showToast(person.name + " marked " + (status === "P" ? (forced ? "Present (forced on-time)" : "Present") : ("Late (+" + minutesLate + "m)")), "success");
 }
 
 // Undo a tap. Rather than deleting the key outright, leave a "cleared"
@@ -1430,6 +1501,15 @@ document.querySelectorAll(".tab-btn").forEach(btn => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     renderUploadBar();
   });
+});
+
+/* ---------- Force present toggle ---------- */
+document.getElementById("forcePresentToggle").addEventListener("click", () => {
+  forcePresentMode = !forcePresentMode;
+  document.getElementById("forcePresentToggle").classList.toggle("active", forcePresentMode);
+  document.getElementById("forcePresentToggle").setAttribute("aria-checked", String(forcePresentMode));
+  document.getElementById("forcePresentRow").classList.toggle("active", forcePresentMode);
+  showToast(forcePresentMode ? "On-time override active" : "On-time override off", "success");
 });
 
 /* ---------- Settings modal ---------- */
