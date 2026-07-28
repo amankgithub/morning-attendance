@@ -468,7 +468,7 @@
             margin-bottom: 8px;
         }
 
-        input[type=url], input[type=text] {
+        input[type=url], input[type=text], input[type=search] {
             width: 100%;
             background: var(--bg-subtle);
             border: 1px solid var(--border);
@@ -481,6 +481,51 @@
         }
 
         input:focus { border-color: var(--primary); }
+
+        /* Reset Safari's default rounded search-pill chrome, and hide the
+           native clear (x) button — it renders as a plain gray system icon
+           that clashes with the theme — in favor of a themed one below. */
+        input[type=search] {
+            -webkit-appearance: textfield;
+            appearance: textfield;
+        }
+        input[type=search]::-webkit-search-cancel-button {
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        .search-wrap {
+            position: relative;
+            margin-top: 10px;
+        }
+
+        .search-input {
+            display: block;
+            padding-right: 40px;
+        }
+
+        .search-clear {
+            display: none;
+            position: absolute;
+            top: 50%;
+            right: 6px;
+            transform: translateY(-50%);
+            width: 26px;
+            height: 26px;
+            border: none;
+            border-radius: 50%;
+            background: var(--primary-light);
+            color: var(--primary-dark);
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .search-clear.show { display: flex; }
+
+        .search-clear:active { transform: translateY(-50%) scale(0.9); }
 
         .btn-group {
             display: flex;
@@ -704,6 +749,10 @@
         <button class="tab-btn active" data-tab="1">SA</button>
         <button class="tab-btn" data-tab="2">MC</button>
         <button class="tab-btn" data-tab="3">MA</button>
+    </div>
+    <div class="search-wrap">
+        <input type="search" class="search-input" id="searchInput" placeholder="Search by name…" autocomplete="off" aria-label="Search people by name">
+        <button type="button" class="search-clear" id="searchClear" aria-label="Clear search">×</button>
     </div>
     <div class="force-present-row" id="forcePresentRow">
         <span>Mark taps as on-time (ignore late)</span>
@@ -939,6 +988,9 @@ let currentE2Group = GROUPS[0];
 // silently mark a whole future day present.
 let forcePresentMode = false;
 let openOverrideName = null;
+// Live roster filter, ephemeral like the state above — resets on reload,
+// never written to localStorage.
+let searchQuery = "";
 
 /* ---------- Helpers ---------- */
 function pad2(n){ return String(n).padStart(2, "0"); }
@@ -960,6 +1012,10 @@ function timeToDateToday(hhmm){
 }
 function cssSafe(s){ return s.replace(/[^a-zA-Z0-9]/g, "_"); }
 function entryKey(event, name){ return event + "|" + name; }
+function matchesSearch(person){
+  const q = searchQuery.trim().toLowerCase();
+  return !q || person.name.toLowerCase().indexOf(q) !== -1;
+}
 
 function toggleDhoti(event, name){
   const key = entryKey(event, name);
@@ -1279,10 +1335,25 @@ function createPersonRow(event, person, opts){
   return container;
 }
 
+function createEmptyMessage(text){
+  const msg = document.createElement("div");
+  msg.style.textAlign = "center";
+  msg.style.padding = "32px 10px";
+  msg.style.color = "var(--text-muted)";
+  msg.style.fontSize = "14px";
+  msg.textContent = text;
+  return msg;
+}
+
 function renderE1(){
   const list = document.getElementById("e1List");
   list.innerHTML = "";
-  PEOPLE.forEach(p => list.appendChild(createPersonRow(1, p, {allowOverride:true})));
+  const people = PEOPLE.filter(matchesSearch);
+  if(people.length === 0){
+    list.appendChild(createEmptyMessage("No matches for “" + searchQuery.trim() + "”."));
+    return;
+  }
+  people.forEach(p => list.appendChild(createPersonRow(1, p, {allowOverride:true})));
 }
 
 function renderGroupPicker(){
@@ -1305,22 +1376,26 @@ function renderE2(){
   list.innerHTML = "";
   const members = PEOPLE.filter(p => p.group === currentE2Group);
   if(members.length === 0){
-    const msg = document.createElement("div");
-    msg.style.textAlign = "center";
-    msg.style.padding = "32px 10px";
-    msg.style.color = "var(--text-muted)";
-    msg.style.fontSize = "14px";
-    msg.textContent = "No members in " + currentE2Group + " yet.";
-    list.appendChild(msg);
+    list.appendChild(createEmptyMessage("No members in " + currentE2Group + " yet."));
     return;
   }
-  members.forEach(p => list.appendChild(createPersonRow(2, p)));
+  const visible = members.filter(matchesSearch);
+  if(visible.length === 0){
+    list.appendChild(createEmptyMessage("No matches for “" + searchQuery.trim() + "”."));
+    return;
+  }
+  visible.forEach(p => list.appendChild(createPersonRow(2, p)));
 }
 
 function renderE3(){
   const list = document.getElementById("e3List");
   list.innerHTML = "";
-  PEOPLE.forEach(p => list.appendChild(createPersonRow(3, p)));
+  const people = PEOPLE.filter(matchesSearch);
+  if(people.length === 0){
+    list.appendChild(createEmptyMessage("No matches for “" + searchQuery.trim() + "”."));
+    return;
+  }
+  people.forEach(p => list.appendChild(createPersonRow(3, p)));
 }
 
 function renderUploadBar(){
@@ -1510,6 +1585,22 @@ document.getElementById("forcePresentToggle").addEventListener("click", () => {
   document.getElementById("forcePresentToggle").setAttribute("aria-checked", String(forcePresentMode));
   document.getElementById("forcePresentRow").classList.toggle("active", forcePresentMode);
   showToast(forcePresentMode ? "On-time override active" : "On-time override off", "success");
+});
+
+/* ---------- Search filter ---------- */
+const searchInput = document.getElementById("searchInput");
+const searchClear = document.getElementById("searchClear");
+searchInput.addEventListener("input", (ev) => {
+  searchQuery = ev.target.value;
+  searchClear.classList.toggle("show", searchQuery.length > 0);
+  renderAll();
+});
+searchClear.addEventListener("click", () => {
+  searchInput.value = "";
+  searchQuery = "";
+  searchClear.classList.remove("show");
+  searchInput.focus();
+  renderAll();
 });
 
 /* ---------- Settings modal ---------- */
